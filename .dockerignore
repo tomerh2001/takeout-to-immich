@@ -1,0 +1,6 @@
+.git
+.env
+.env.local
+config/*.conf
+tmp
+dist

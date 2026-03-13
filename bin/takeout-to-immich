@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+    cat <<'EOF'
+Usage: takeout-to-immich [worker-args...]
+
+Runs the Takeout -> Immich workflow inside an ephemeral Docker container.
+Configuration is loaded from .env in the repository root unless
+TAKEOUT_TO_IMMICH_ENV_FILE points somewhere else.
+
+Any arguments passed to this wrapper are forwarded to the containerized worker.
+EOF
+}
+
+fail() {
+    printf 'ERROR: %s\n' "$*" >&2
+    exit 1
+}
+
+require_cmd() {
+    command -v "$1" >/dev/null 2>&1 || fail "Required command not found: $1"
+}
+
+repo_root="$(CDPATH='' cd -- "$(dirname "$0")/.." && pwd)"
+env_file="${TAKEOUT_TO_IMMICH_ENV_FILE:-$repo_root/.env}"
+dockerfile_path="$repo_root/Dockerfile"
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+    usage
+    exit 0
+fi
+
+require_cmd docker
+[[ -f "$env_file" ]] || fail "Missing environment file: $env_file"
+
+set -a
+# shellcheck disable=SC1090
+. "$env_file"
+set +a
+
+docker_image="${DOCKER_IMAGE:-ghcr.io/tomerh2001/takeout-to-immich:latest}"
+pull_image="${PULL_IMAGE:-true}"
+allow_local_build="${ALLOW_LOCAL_BUILD:-true}"
+docker_network="${DOCKER_NETWORK:-}"
+docker_build_network="${DOCKER_BUILD_NETWORK:-}"
+immich_go_version="${IMMICH_GO_VERSION:-v0.31.0}"
+rclone_config_path="${RCLONE_CONFIG_PATH:-$repo_root/config/rclone-google-drive.conf}"
+stage_dir="${STAGE_DIR:-}"
+
+[[ -n "$stage_dir" ]] || fail "STAGE_DIR must be set in $env_file or passed to the worker"
+[[ -f "$rclone_config_path" ]] || fail "Missing rclone config file: $rclone_config_path"
+
+mkdir -p "$stage_dir"
+
+if ! docker image inspect "$docker_image" >/dev/null 2>&1; then
+    if [[ "$pull_image" == "true" ]]; then
+        docker pull "$docker_image" >/dev/null 2>&1 || true
+    fi
+fi
+
+if ! docker image inspect "$docker_image" >/dev/null 2>&1; then
+    [[ "$allow_local_build" == "true" ]] || fail "Image $docker_image is not available locally and local build is disabled"
+
+    build_cmd=(
+        docker build
+        --build-arg "IMMICH_GO_VERSION=$immich_go_version"
+        -t "$docker_image"
+        -f "$dockerfile_path"
+        "$repo_root"
+    )
+
+    if [[ -n "$docker_build_network" ]]; then
+        build_cmd=(docker build --network "$docker_build_network" --build-arg "IMMICH_GO_VERSION=$immich_go_version" -t "$docker_image" -f "$dockerfile_path" "$repo_root")
+    fi
+
+    "${build_cmd[@]}"
+fi
+
+run_cmd=(
+    docker run --rm
+    --user "$(id -u):$(id -g)"
+    --env-file "$env_file"
+    -e "HOME=/tmp"
+    -v "$rclone_config_path:/config/rclone/rclone.conf:ro"
+    -v "$stage_dir:$stage_dir"
+)
+
+if [[ -n "$docker_network" ]]; then
+    run_cmd+=(--network "$docker_network")
+fi
+
+run_cmd+=("$docker_image")
+run_cmd+=("$@")
+
+exec "${run_cmd[@]}"
+

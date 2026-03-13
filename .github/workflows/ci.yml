@@ -1,0 +1,34 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  lint-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+
+      - name: Bash syntax check
+        run: |
+          bash -n bin/takeout-to-immich
+          bash -n lib/docker-entrypoint.sh
+          bash -n lib/takeout-to-immich-worker.sh
+          bash -n scripts/export-truenas-cloudsync-rclone-config.sh
+
+      - name: Shellcheck
+        run: |
+          shellcheck bin/takeout-to-immich
+          shellcheck lib/docker-entrypoint.sh
+          shellcheck lib/takeout-to-immich-worker.sh
+          shellcheck scripts/export-truenas-cloudsync-rclone-config.sh
+
+      - name: Docker build
+        run: docker build --build-arg IMMICH_GO_VERSION=v0.31.0 -t local/takeout-to-immich:test .
+
