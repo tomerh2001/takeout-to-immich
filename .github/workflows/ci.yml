@@ -29,6 +29,10 @@ jobs:
           shellcheck lib/takeout-to-immich-worker.sh
           shellcheck scripts/export-truenas-cloudsync-rclone-config.sh
 
+      - name: Validate Compose config
+        run: |
+          cp .env.example .env
+          docker compose config -q
+
       - name: Docker build
         run: docker build --build-arg IMMICH_GO_VERSION=v0.31.0 -t local/takeout-to-immich:test .
-
