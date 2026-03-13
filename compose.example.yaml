@@ -9,6 +9,7 @@ services:
     pull_policy: always
     # Match the host user so staged files are not created as root.
     user: "${TAKEOUT_UID:-1000}:${TAKEOUT_GID:-1000}"
+    network_mode: "${DOCKER_NETWORK:-bridge}"
     env_file: .env
     environment:
       HOME: /tmp
@@ -17,7 +18,3 @@ services:
       - ${IMMICH_GO_CONFIG_HOST_PATH}:/config/immich-go/immich-go.yaml:ro
       - ${STAGE_DIR}:${STAGE_DIR}
     command: ["--mode", "${MODE:-all}"]
-
-# If your Immich server is only reachable on a custom Docker network,
-# add a normal Compose networks block in your local copy. The project keeps
-# the tracked example intentionally minimal.

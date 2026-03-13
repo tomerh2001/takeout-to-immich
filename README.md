@@ -29,27 +29,9 @@ download and upload layers instead.
 
 1. Copy `.env.example` to `.env`
 2. Copy [`config/immich-go.example.yaml`](./config/immich-go.example.yaml) to a real local file such as `config/immich-go.yaml`
-3. Set `SOURCE_REMOTE`, `STAGE_DIR`, `RCLONE_CONFIG_PATH`, `IMMICH_GO_CONFIG_HOST_PATH`, and if you plan to use Compose also set `TAKEOUT_UID` and `TAKEOUT_GID`
+3. Set `SOURCE_REMOTE`, `STAGE_DIR`, `RCLONE_CONFIG_PATH`, `IMMICH_GO_CONFIG_HOST_PATH`, `DOCKER_NETWORK`, `TAKEOUT_UID`, and `TAKEOUT_GID`
 4. Put your Immich server URL, API key, concurrency, and other [`immich-go`][immich-go-repo] upload settings in that native config file
-5. Run the wrapper:
-
-```bash
-bash bin/takeout-to-immich --mode download
-bash bin/takeout-to-immich --mode verify
-bash bin/takeout-to-immich --mode upload
-```
-
-The wrapper will:
-
-- pull `ghcr.io/tomerh2001/takeout-to-immich:latest` if available
-- fall back to building the local image from this repo if needed
-- launch the worker in an ephemeral container
-- mount your native [`immich-go`][immich-go-repo] config and pass it with `--config`
-
-## Docker Compose Usage
-
-If you prefer Compose over a long `docker run` command, this repository also
-ships a ready-to-use [`compose.yaml`](./compose.yaml):
+5. Run it with Compose:
 
 ```bash
 docker compose run --rm takeout-to-immich --mode download
@@ -57,9 +39,22 @@ docker compose run --rm takeout-to-immich --mode verify
 docker compose run --rm takeout-to-immich --mode upload
 ```
 
-The compose service uses the same `.env` file and bind mounts as the wrapper.
-Set `TAKEOUT_UID` and `TAKEOUT_GID` in `.env` so the container writes staging
-files as your host user instead of `root`. Your native
+## Docker Compose Usage
+
+Compose is the primary way to use this project. The tracked
+[`compose.yaml`](./compose.yaml) is intentionally small:
+
+```bash
+docker compose run --rm takeout-to-immich --mode download
+docker compose run --rm takeout-to-immich --mode verify
+docker compose run --rm takeout-to-immich --mode upload
+```
+
+The compose service uses the same `.env` file for image, network, user, and
+mount paths. Set `TAKEOUT_UID` and `TAKEOUT_GID` in `.env` so the container
+writes staging files as your host user instead of `root`. Set `DOCKER_NETWORK`
+to `bridge` for the default Docker network or to an existing network such as
+`traefik_proxy` if Immich is only reachable there. Your native
 [`immich-go`][immich-go-repo] config is mounted from `IMMICH_GO_CONFIG_HOST_PATH`.
 
 If you want a copy-friendly starting point for your own directory layout, use
@@ -68,12 +63,15 @@ If you want a copy-friendly starting point for your own directory layout, use
 
 ## Docker-Only Usage
 
-If you do not want the wrapper, you can run the published image directly:
+If you do not want Compose, you can run the published image directly:
 
 ```bash
 docker run --rm \
+  --user "$(id -u):$(id -g)" \
   --env-file .env \
+  -e HOME=/tmp \
   -v "$PWD/config/rclone-google-drive.conf:/config/rclone/rclone.conf:ro" \
+  -v "$PWD/config/immich-go.yaml:/config/immich-go/immich-go.yaml:ro" \
   -v /absolute/path/to/google-photos-staging:/absolute/path/to/google-photos-staging \
   ghcr.io/tomerh2001/takeout-to-immich:latest \
   --mode download
@@ -83,9 +81,6 @@ If your Immich server is only reachable on a Docker network, also add
 `--network your-network-name` and set `upload.server` in your native
 [`immich-go`][immich-go-repo] config file to that container URL, for example
 `http://immich:8080`.
-
-For Compose, keep the tracked file simple and add a normal Compose `networks:`
-section in your local copy only if you need container-to-container networking.
 
 ## Modes
 
@@ -101,7 +96,7 @@ This project now treats native [`immich-go`][immich-go-repo] config as the
 source of truth for upload behavior.
 
 - Put upload-specific settings such as server URL, API key, `concurrent-tasks`, `client-timeout`, `pause-immich-jobs`, album/tag behavior, and Google Photos import options in your [`immich-go`][immich-go-repo] config file.
-- Keep wrapper-level workflow settings such as `SOURCE_REMOTE`, `STAGE_DIR`, `RCLONE_CONFIG_PATH`, `UPLOAD_PASSES`, and `DRY_RUN` in `.env`.
+- Keep Compose-level workflow settings such as `SOURCE_REMOTE`, `STAGE_DIR`, `RCLONE_CONFIG_PATH`, `DOCKER_NETWORK`, `UPLOAD_PASSES`, and `DRY_RUN` in `.env`.
 - Start from [`config/immich-go.example.yaml`](./config/immich-go.example.yaml) and adjust it for your environment.
 - Upstream native config documentation lives here:
   [`immich-go` configuration docs](https://github.com/simulot/immich-go/blob/main/docs/configuration.md)
@@ -139,8 +134,8 @@ For most users, the current published image is:
 - `ghcr.io/tomerh2001/takeout-to-immich:latest`
 
 The repository intentionally keeps real credentials, host paths, and API keys
-out of version control. Use `.env`, `config/*.conf`, and local Docker runtime
-flags for your own environment-specific values. Keep your real
+out of version control. Use `.env`, `config/*.conf`, and `docker run` flags
+for your own environment-specific values. Keep your real
 [`immich-go`][immich-go-repo] config in an ignored local file such as
 `config/immich-go.yaml`.
 

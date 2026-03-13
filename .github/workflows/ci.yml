@@ -17,14 +17,12 @@ jobs:
 
       - name: Bash syntax check
         run: |
-          bash -n bin/takeout-to-immich
           bash -n lib/docker-entrypoint.sh
           bash -n lib/takeout-to-immich-worker.sh
           bash -n scripts/export-truenas-cloudsync-rclone-config.sh
 
       - name: Shellcheck
         run: |
-          shellcheck bin/takeout-to-immich
           shellcheck lib/docker-entrypoint.sh
           shellcheck lib/takeout-to-immich-worker.sh
           shellcheck scripts/export-truenas-cloudsync-rclone-config.sh

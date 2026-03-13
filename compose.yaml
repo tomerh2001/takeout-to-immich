@@ -3,6 +3,7 @@ services:
     image: ${DOCKER_IMAGE:-ghcr.io/tomerh2001/takeout-to-immich:latest}
     pull_policy: always
     user: "${TAKEOUT_UID:-1000}:${TAKEOUT_GID:-1000}"
+    network_mode: "${DOCKER_NETWORK:-bridge}"
     env_file: .env
     environment:
       HOME: /tmp
