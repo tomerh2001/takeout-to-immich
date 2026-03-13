@@ -56,6 +56,9 @@ writes staging files as your host user instead of `root`. Set `DOCKER_NETWORK`
 to `bridge` for the default Docker network or to an existing network such as
 `traefik_proxy` if Immich is only reachable there. Your native
 [`immich-go`][immich-go-repo] config is mounted from `IMMICH_GO_CONFIG_HOST_PATH`.
+If you are testing an unreleased local image, set `DOCKER_IMAGE` to that local
+tag and `DOCKER_PULL_POLICY=never` so Compose does not replace it with the
+published `:latest` image.
 
 If you want a copy-friendly starting point for your own directory layout, use
 [`compose.example.yaml`](./compose.example.yaml) together with

@@ -80,6 +80,16 @@ write_marker() {
     printf '%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"$marker_file"
 }
 
+write_success_marker() {
+    local marker_file="$1"
+    if [[ "$dry_run" == "true" ]]; then
+        log_line "Skipping success marker in dry-run mode: $marker_file"
+        return
+    fi
+
+    write_marker "$marker_file"
+}
+
 local_payload_manifest() {
     find "$payload_dir" -type f -printf '%P\t%s\n' | LC_ALL=C sort >"$state_dir/local-payload-manifest.tsv"
 }
@@ -122,7 +132,7 @@ download_batch() {
     fi
 
     run_logged "$logfile" "${cmd[@]}"
-    write_marker "$state_dir/download.ok"
+    write_success_marker "$state_dir/download.ok"
     local_payload_manifest
 }
 
@@ -148,7 +158,7 @@ verify_batch() {
     run_logged "$logfile" "${cmd[@]}"
     ensure_zip_payload
     local_payload_manifest
-    write_marker "$state_dir/verify.ok"
+    write_success_marker "$state_dir/verify.ok"
 }
 
 upload_batch() {
@@ -174,10 +184,10 @@ upload_batch() {
         cmd+=(upload from-google-photos)
         cmd+=("${zip_files[@]}")
         run_logged "$logfile" "${cmd[@]}"
-        write_marker "$state_dir/upload-pass-${pass}.ok"
+        write_success_marker "$state_dir/upload-pass-${pass}.ok"
     done
 
-    write_marker "$state_dir/upload.ok"
+    write_success_marker "$state_dir/upload.ok"
 }
 
 cleanup_payload() {
@@ -192,7 +202,7 @@ cleanup_payload() {
     fi
 
     rm -rf -- "$payload_dir"
-    write_marker "$state_dir/cleanup.ok"
+    write_success_marker "$state_dir/cleanup.ok"
 }
 
 source_remote="${SOURCE_REMOTE:-}"

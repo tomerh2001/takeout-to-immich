@@ -1,7 +1,7 @@
 services:
   takeout-to-immich:
     image: ${DOCKER_IMAGE:-ghcr.io/tomerh2001/takeout-to-immich:latest}
-    pull_policy: always
+    pull_policy: ${DOCKER_PULL_POLICY:-always}
     user: "${TAKEOUT_UID:-1000}:${TAKEOUT_GID:-1000}"
     network_mode: "${DOCKER_NETWORK:-bridge}"
     env_file: .env
