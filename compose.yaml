@@ -1,0 +1,28 @@
+services:
+  takeout-to-immich:
+    image: ${DOCKER_IMAGE:-ghcr.io/tomerh2001/takeout-to-immich:latest}
+    pull_policy: always
+    init: true
+    user: "${TAKEOUT_UID:-1000}:${TAKEOUT_GID:-1000}"
+    networks:
+      - runtime
+    env_file:
+      - .env
+    environment:
+      HOME: /tmp
+    volumes:
+      - type: bind
+        source: ${RCLONE_CONFIG_PATH}
+        target: /config/rclone/rclone.conf
+        read_only: true
+      - type: bind
+        source: ${STAGE_DIR}
+        target: ${STAGE_DIR}
+    command:
+      - --mode
+      - ${MODE:-all}
+
+networks:
+  runtime:
+    external: true
+    name: ${DOCKER_NETWORK:-bridge}

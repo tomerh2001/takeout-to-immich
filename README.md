@@ -28,7 +28,7 @@ download and upload layers instead.
 ## Quick Start
 
 1. Copy `.env.example` to `.env`
-2. Set `SOURCE_REMOTE`, `STAGE_DIR`, `RCLONE_CONFIG_PATH`, `IMMICH_SERVER`, and `IMMICH_API_KEY`
+2. Set `SOURCE_REMOTE`, `STAGE_DIR`, `RCLONE_CONFIG_PATH`, `IMMICH_SERVER`, `IMMICH_API_KEY`, and if you plan to use Compose also set `TAKEOUT_UID` and `TAKEOUT_GID`
 3. Run the wrapper:
 
 ```bash
@@ -42,6 +42,23 @@ The wrapper will:
 - pull `ghcr.io/tomerh2001/takeout-to-immich:latest` if available
 - fall back to building the local image from this repo if needed
 - launch the worker in an ephemeral container
+
+## Docker Compose Usage
+
+If you prefer Compose over a long `docker run` command, this repository also
+ships a ready-to-use [`compose.yaml`](./compose.yaml):
+
+```bash
+docker compose run --rm takeout-to-immich --mode download
+docker compose run --rm takeout-to-immich --mode verify
+docker compose run --rm takeout-to-immich --mode upload
+```
+
+The compose service uses the same `.env` file and bind mounts as the wrapper.
+Set `TAKEOUT_UID` and `TAKEOUT_GID` in `.env` so the container writes staging
+files as your host user instead of `root`. It also reuses `DOCKER_NETWORK`:
+leave it blank to run on Docker's default `bridge` network, or set it to an
+existing external network name if Immich is only reachable there.
 
 ## Docker-Only Usage
 
