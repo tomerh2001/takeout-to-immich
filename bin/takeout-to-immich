@@ -89,7 +89,6 @@ run_cmd=(
 
 if [[ -f "$immich_go_config_host_path" ]]; then
     run_cmd+=(
-        -e "IMMICH_GO_CONFIG=/config/immich-go/immich-go.yaml"
         -v "$immich_go_config_host_path:/config/immich-go/immich-go.yaml:ro"
     )
 fi

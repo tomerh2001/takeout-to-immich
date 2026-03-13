@@ -59,9 +59,7 @@ docker compose run --rm takeout-to-immich --mode upload
 
 The compose service uses the same `.env` file and bind mounts as the wrapper.
 Set `TAKEOUT_UID` and `TAKEOUT_GID` in `.env` so the container writes staging
-files as your host user instead of `root`. It also reuses `DOCKER_NETWORK`:
-leave it blank to run on Docker's default `bridge` network, or set it to an
-existing external network name if Immich is only reachable there. Your native
+files as your host user instead of `root`. Your native
 [`immich-go`][immich-go-repo] config is mounted from `IMMICH_GO_CONFIG_HOST_PATH`.
 
 If you want a copy-friendly starting point for your own directory layout, use
@@ -85,6 +83,9 @@ If your Immich server is only reachable on a Docker network, also add
 `--network your-network-name` and set `upload.server` in your native
 [`immich-go`][immich-go-repo] config file to that container URL, for example
 `http://immich:8080`.
+
+For Compose, keep the tracked file simple and add a normal Compose `networks:`
+section in your local copy only if you need container-to-container networking.
 
 ## Modes
 

@@ -7,33 +7,17 @@ services:
   takeout-to-immich:
     image: ${DOCKER_IMAGE:-ghcr.io/tomerh2001/takeout-to-immich:latest}
     pull_policy: always
-    init: true
     # Match the host user so staged files are not created as root.
     user: "${TAKEOUT_UID:-1000}:${TAKEOUT_GID:-1000}"
-    networks:
-      - runtime
-    env_file:
-      - .env
+    env_file: .env
     environment:
       HOME: /tmp
-      IMMICH_GO_CONFIG: /config/immich-go/immich-go.yaml
     volumes:
-      - type: bind
-        source: ${RCLONE_CONFIG_PATH}
-        target: /config/rclone/rclone.conf
-        read_only: true
-      - type: bind
-        source: ${IMMICH_GO_CONFIG_HOST_PATH}
-        target: /config/immich-go/immich-go.yaml
-        read_only: true
-      - type: bind
-        source: ${STAGE_DIR}
-        target: ${STAGE_DIR}
-    command:
-      - --mode
-      - ${MODE:-all}
+      - ${RCLONE_CONFIG_PATH}:/config/rclone/rclone.conf:ro
+      - ${IMMICH_GO_CONFIG_HOST_PATH}:/config/immich-go/immich-go.yaml:ro
+      - ${STAGE_DIR}:${STAGE_DIR}
+    command: ["--mode", "${MODE:-all}"]
 
-networks:
-  runtime:
-    external: true
-    name: ${DOCKER_NETWORK:-bridge}
+# If your Immich server is only reachable on a custom Docker network,
+# add a normal Compose networks block in your local copy. The project keeps
+# the tracked example intentionally minimal.
