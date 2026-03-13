@@ -93,14 +93,12 @@ This helper is optional and TrueNAS-specific.
 GitHub Actions automatically:
 
 - lint and build-test the project on pushes and pull requests
-- create GitHub Releases on version tags like `v0.1.0`
+- create GitHub Releases from version tags
 - publish container images to `ghcr.io/tomerh2001/takeout-to-immich`
 
-Published image tags include:
+For most users, the current published image is:
 
-- `latest`
-- `v0.1.0`
-- `0.1.0`
+- `ghcr.io/tomerh2001/takeout-to-immich:latest`
 
 The repository intentionally keeps real credentials, host paths, and API keys
 out of version control. Use `.env`, `config/*.conf`, and local Docker runtime
