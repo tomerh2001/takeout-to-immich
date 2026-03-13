@@ -94,9 +94,18 @@ GitHub Actions automatically:
 
 - lint and build-test the project on pushes and pull requests
 - create GitHub Releases on version tags like `v0.1.0`
-- publish versioned container images to `ghcr.io/tomerh2001/takeout-to-immich`
+- publish container images to `ghcr.io/tomerh2001/takeout-to-immich`
+
+Published image tags include:
+
+- `latest`
+- `v0.1.0`
+- `0.1.0`
+
+The repository intentionally keeps real credentials, host paths, and API keys
+out of version control. Use `.env`, `config/*.conf`, and local Docker runtime
+flags for your own environment-specific values.
 
 ## License
 
 MIT
-
