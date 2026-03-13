@@ -32,7 +32,8 @@ jobs:
       - name: Validate Compose config
         run: |
           cp .env.example .env
-          docker compose config -q
+          docker compose -f compose.yaml config -q
+          docker compose -f compose.example.yaml config -q
 
       - name: Docker build
         run: docker build --build-arg IMMICH_GO_VERSION=v0.31.0 -t local/takeout-to-immich:test .

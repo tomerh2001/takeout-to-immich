@@ -60,6 +60,10 @@ files as your host user instead of `root`. It also reuses `DOCKER_NETWORK`:
 leave it blank to run on Docker's default `bridge` network, or set it to an
 existing external network name if Immich is only reachable there.
 
+If you want a copy-friendly starting point for your own directory layout, use
+[`compose.example.yaml`](./compose.example.yaml) together with
+[`.env.example`](./.env.example).
+
 ## Docker-Only Usage
 
 If you do not want the wrapper, you can run the published image directly:
