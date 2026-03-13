@@ -1,7 +1,9 @@
 .env
 .env.local
 config/*.conf
+config/*.yaml
+!config/*.example.yaml
+!config/.gitkeep
 tmp/
 dist/
 *.log
-

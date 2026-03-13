@@ -10,10 +10,15 @@ services:
       - .env
     environment:
       HOME: /tmp
+      IMMICH_GO_CONFIG: /config/immich-go/immich-go.yaml
     volumes:
       - type: bind
         source: ${RCLONE_CONFIG_PATH}
         target: /config/rclone/rclone.conf
+        read_only: true
+      - type: bind
+        source: ${IMMICH_GO_CONFIG_HOST_PATH}
+        target: /config/immich-go/immich-go.yaml
         read_only: true
       - type: bind
         source: ${STAGE_DIR}

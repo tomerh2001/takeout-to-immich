@@ -28,8 +28,10 @@ download and upload layers instead.
 ## Quick Start
 
 1. Copy `.env.example` to `.env`
-2. Set `SOURCE_REMOTE`, `STAGE_DIR`, `RCLONE_CONFIG_PATH`, `IMMICH_SERVER`, `IMMICH_API_KEY`, and if you plan to use Compose also set `TAKEOUT_UID` and `TAKEOUT_GID`
-3. Run the wrapper:
+2. Copy [`config/immich-go.example.yaml`](./config/immich-go.example.yaml) to a real local file such as `config/immich-go.yaml`
+3. Set `SOURCE_REMOTE`, `STAGE_DIR`, `RCLONE_CONFIG_PATH`, `IMMICH_GO_CONFIG_HOST_PATH`, and if you plan to use Compose also set `TAKEOUT_UID` and `TAKEOUT_GID`
+4. Put your Immich server URL, API key, concurrency, and other [`immich-go`][immich-go-repo] upload settings in that native config file
+5. Run the wrapper:
 
 ```bash
 bash bin/takeout-to-immich --mode download
@@ -42,6 +44,7 @@ The wrapper will:
 - pull `ghcr.io/tomerh2001/takeout-to-immich:latest` if available
 - fall back to building the local image from this repo if needed
 - launch the worker in an ephemeral container
+- mount your native [`immich-go`][immich-go-repo] config and pass it with `--config`
 
 ## Docker Compose Usage
 
@@ -58,7 +61,8 @@ The compose service uses the same `.env` file and bind mounts as the wrapper.
 Set `TAKEOUT_UID` and `TAKEOUT_GID` in `.env` so the container writes staging
 files as your host user instead of `root`. It also reuses `DOCKER_NETWORK`:
 leave it blank to run on Docker's default `bridge` network, or set it to an
-existing external network name if Immich is only reachable there.
+existing external network name if Immich is only reachable there. Your native
+[`immich-go`][immich-go-repo] config is mounted from `IMMICH_GO_CONFIG_HOST_PATH`.
 
 If you want a copy-friendly starting point for your own directory layout, use
 [`compose.example.yaml`](./compose.example.yaml) together with
@@ -78,22 +82,34 @@ docker run --rm \
 ```
 
 If your Immich server is only reachable on a Docker network, also add
-`--network your-network-name` and set `IMMICH_SERVER` to the container URL,
-for example `http://immich:8080`.
+`--network your-network-name` and set `upload.server` in your native
+[`immich-go`][immich-go-repo] config file to that container URL, for example
+`http://immich:8080`.
 
 ## Modes
 
 - `download`: stage the export locally with [`rclone`][rclone-repo] `copy`
 - `verify`: compare source and staged payload with [`rclone`][rclone-repo] `check`
-- `upload`: import the staged payload into Immich
+- `upload`: import the staged payload into Immich using your native [`immich-go`][immich-go-repo] config
 - `cleanup`: remove the local payload after a successful upload
 - `all`: run `download`, `verify`, and `upload` in sequence
+
+## immich-go Config
+
+This project now treats native [`immich-go`][immich-go-repo] config as the
+source of truth for upload behavior.
+
+- Put upload-specific settings such as server URL, API key, `concurrent-tasks`, `client-timeout`, `pause-immich-jobs`, album/tag behavior, and Google Photos import options in your [`immich-go`][immich-go-repo] config file.
+- Keep wrapper-level workflow settings such as `SOURCE_REMOTE`, `STAGE_DIR`, `RCLONE_CONFIG_PATH`, `UPLOAD_PASSES`, and `DRY_RUN` in `.env`.
+- Start from [`config/immich-go.example.yaml`](./config/immich-go.example.yaml) and adjust it for your environment.
+- Upstream native config documentation lives here:
+  [`immich-go` configuration docs](https://github.com/simulot/immich-go/blob/main/docs/configuration.md)
 
 ## Important Safety Rules
 
 - Batch by complete export set, not by individual split ZIP.
 - Do not rename Takeout ZIP files.
-- Keep `INCLUDE_UNMATCHED=false` unless you are intentionally salvaging incomplete metadata.
+- Keep `include-unmatched: false` in your native [`immich-go`][immich-go-repo] config unless you are intentionally salvaging incomplete metadata.
 - Do not delete staging until the `verify` step and the second upload pass both succeed.
 
 ## TrueNAS Helper
@@ -123,7 +139,9 @@ For most users, the current published image is:
 
 The repository intentionally keeps real credentials, host paths, and API keys
 out of version control. Use `.env`, `config/*.conf`, and local Docker runtime
-flags for your own environment-specific values.
+flags for your own environment-specific values. Keep your real
+[`immich-go`][immich-go-repo] config in an ignored local file such as
+`config/immich-go.yaml`.
 
 ## License
 

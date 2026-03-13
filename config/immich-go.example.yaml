@@ -1,0 +1,36 @@
+# Copy this file to config/immich-go.yaml or another local path and point
+# IMMICH_GO_CONFIG_HOST_PATH at it from your .env file.
+#
+# Native immich-go configuration docs:
+# https://github.com/simulot/immich-go/blob/main/docs/configuration.md
+
+concurrent-tasks: 12
+on-errors: continue
+
+upload:
+  server: https://immich.example.com
+  api-key: replace-with-your-api-key
+  client-timeout: 60m
+  pause-immich-jobs: true
+  session-tag: true
+  # Optional examples:
+  # device-uuid: mainserver
+  # skip-verify-ssl: false
+  # no-ui: false
+  # manage-raw-jpeg: NoStack
+  # manage-heic-jpeg: NoStack
+  # manage-burst: NoStack
+
+  from-google-photos:
+    include-unmatched: false
+    include-archived: true
+    include-partner: true
+    include-trashed: false
+    include-untitled-albums: false
+    sync-albums: true
+    people-tag: true
+    takeout-tag: true
+    # Optional examples:
+    # from-album-name: ""
+    # include-type: ""
+    # date-range: 2024-01-01,2024-12-31

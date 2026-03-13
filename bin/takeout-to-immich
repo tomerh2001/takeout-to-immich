@@ -46,6 +46,7 @@ docker_network="${DOCKER_NETWORK:-}"
 docker_build_network="${DOCKER_BUILD_NETWORK:-}"
 immich_go_version="${IMMICH_GO_VERSION:-v0.31.0}"
 rclone_config_path="${RCLONE_CONFIG_PATH:-$repo_root/config/rclone-google-drive.conf}"
+immich_go_config_host_path="${IMMICH_GO_CONFIG_HOST_PATH:-$repo_root/config/immich-go.yaml}"
 stage_dir="${STAGE_DIR:-}"
 
 [[ -n "$stage_dir" ]] || fail "STAGE_DIR must be set in $env_file or passed to the worker"
@@ -86,6 +87,13 @@ run_cmd=(
     -v "$stage_dir:$stage_dir"
 )
 
+if [[ -f "$immich_go_config_host_path" ]]; then
+    run_cmd+=(
+        -e "IMMICH_GO_CONFIG=/config/immich-go/immich-go.yaml"
+        -v "$immich_go_config_host_path:/config/immich-go/immich-go.yaml:ro"
+    )
+fi
+
 if [[ -n "$docker_network" ]]; then
     run_cmd+=(--network "$docker_network")
 fi
@@ -94,4 +102,3 @@ run_cmd+=("$docker_image")
 run_cmd+=("$@")
 
 exec "${run_cmd[@]}"
-

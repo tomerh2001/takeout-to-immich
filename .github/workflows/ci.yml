@@ -37,3 +37,12 @@ jobs:
 
       - name: Docker build
         run: docker build --build-arg IMMICH_GO_VERSION=v0.31.0 -t local/takeout-to-immich:test .
+
+      - name: Validate immich-go example config
+        run: |
+          docker run --rm \
+            -v "$PWD/config/immich-go.example.yaml:/tmp/immich-go.yaml:ro" \
+            --entrypoint immich-go \
+            local/takeout-to-immich:test \
+            --config /tmp/immich-go.yaml \
+            upload from-google-photos --help >/dev/null

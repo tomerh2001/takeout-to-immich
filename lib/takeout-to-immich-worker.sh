@@ -17,17 +17,12 @@ Optional arguments:
   --batch-name NAME             local batch name (default: derived from remote path)
   --mode MODE                   one of: all, download, verify, upload, cleanup
                                 (default: all)
-  --immich-server URL           Immich base URL (or use IMMICH_SERVER)
-  --immich-api-key KEY          Immich API key (or use IMMICH_API_KEY)
   --rclone-binary PATH          rclone binary (default: rclone)
   --immich-go-binary PATH       immich-go binary (default: immich-go)
+  --immich-go-config PATH       native immich-go YAML/TOML/JSON config
+                                (or use IMMICH_GO_CONFIG)
   --rclone-transfers N          parallel transfers for rclone copy (default: 4)
   --rclone-checkers N           parallel checkers for rclone/check (default: 8)
-  --immich-concurrent-tasks N   immich-go concurrent tasks (default: 4)
-  --immich-client-timeout DUR   immich-go client timeout (default: 60m)
-  --pause-immich-jobs BOOL      immich-go pause-immich-jobs setting (default: true)
-  --include-unmatched BOOL      import unmatched files without JSON metadata
-                                (default: false)
   --upload-passes N             number of immich-go passes to run (default: 2)
   --cleanup-after-success BOOL  remove local payload after successful upload
                                 (default: false)
@@ -159,8 +154,8 @@ verify_batch() {
 upload_batch() {
     ensure_zip_payload
     require_cmd "$immich_go_bin"
-    [[ -n "$immich_server" ]] || fail "--immich-server is required for upload mode (or set IMMICH_SERVER)"
-    [[ -n "$immich_api_key" ]] || fail "--immich-api-key is required for upload mode (or set IMMICH_API_KEY)"
+    [[ -n "$immich_go_config" ]] || fail "--immich-go-config is required for upload mode (or set IMMICH_GO_CONFIG)"
+    [[ -f "$immich_go_config" ]] || fail "immich-go config file not found: $immich_go_config"
 
     local pass
     for ((pass = 1; pass <= upload_passes; pass++)); do
@@ -168,24 +163,15 @@ upload_batch() {
         log_line "Uploading batch $batch_name to Immich (pass ${pass}/${upload_passes})"
 
         local cmd=(
-            "$immich_go_bin" upload from-google-photos
-            --server="$immich_server"
-            --api-key="$immich_api_key"
-            --concurrent-tasks="$immich_concurrent_tasks"
-            --client-timeout="$immich_client_timeout"
-            --pause-immich-jobs="$pause_immich_jobs"
-            --on-errors=continue
-            --session-tag
+            "$immich_go_bin"
+            --config "$immich_go_config"
         )
-
-        if [[ "$include_unmatched" == "true" ]]; then
-            cmd+=(--include-unmatched)
-        fi
 
         if [[ "$dry_run" == "true" ]]; then
             cmd+=(--dry-run)
         fi
 
+        cmd+=(upload from-google-photos)
         cmd+=("${zip_files[@]}")
         run_logged "$logfile" "${cmd[@]}"
         write_marker "$state_dir/upload-pass-${pass}.ok"
@@ -213,16 +199,11 @@ source_remote="${SOURCE_REMOTE:-}"
 stage_dir="${STAGE_DIR:-}"
 batch_name="${BATCH_NAME:-}"
 mode="${MODE:-all}"
-immich_server="${IMMICH_SERVER:-}"
-immich_api_key="${IMMICH_API_KEY:-}"
 rclone_bin="${RCLONE_BIN:-rclone}"
 immich_go_bin="${IMMICH_GO_BIN:-immich-go}"
+immich_go_config="${IMMICH_GO_CONFIG:-}"
 rclone_transfers="${RCLONE_TRANSFERS:-4}"
 rclone_checkers="${RCLONE_CHECKERS:-8}"
-immich_concurrent_tasks="${IMMICH_CONCURRENT_TASKS:-4}"
-immich_client_timeout="${IMMICH_CLIENT_TIMEOUT:-60m}"
-pause_immich_jobs="${PAUSE_IMMICH_JOBS:-true}"
-include_unmatched="${INCLUDE_UNMATCHED:-false}"
 upload_passes="${UPLOAD_PASSES:-2}"
 cleanup_after_success="${CLEANUP_AFTER_SUCCESS:-false}"
 force_cleanup="false"
@@ -246,12 +227,8 @@ while (($#)); do
             mode="${2:-}"
             shift 2
             ;;
-        --immich-server)
-            immich_server="${2:-}"
-            shift 2
-            ;;
-        --immich-api-key)
-            immich_api_key="${2:-}"
+        --immich-go-config)
+            immich_go_config="${2:-}"
             shift 2
             ;;
         --rclone-binary)
@@ -268,22 +245,6 @@ while (($#)); do
             ;;
         --rclone-checkers)
             rclone_checkers="${2:-}"
-            shift 2
-            ;;
-        --immich-concurrent-tasks)
-            immich_concurrent_tasks="${2:-}"
-            shift 2
-            ;;
-        --immich-client-timeout)
-            immich_client_timeout="${2:-}"
-            shift 2
-            ;;
-        --pause-immich-jobs)
-            pause_immich_jobs="${2:-}"
-            shift 2
-            ;;
-        --include-unmatched)
-            include_unmatched="${2:-}"
             shift 2
             ;;
         --upload-passes)
@@ -330,12 +291,9 @@ esac
 
 [[ "$rclone_transfers" =~ ^[0-9]+$ ]] || fail "--rclone-transfers must be an integer"
 [[ "$rclone_checkers" =~ ^[0-9]+$ ]] || fail "--rclone-checkers must be an integer"
-[[ "$immich_concurrent_tasks" =~ ^[0-9]+$ ]] || fail "--immich-concurrent-tasks must be an integer"
 [[ "$upload_passes" =~ ^[0-9]+$ ]] || fail "--upload-passes must be an integer"
 (( upload_passes >= 1 )) || fail "--upload-passes must be at least 1"
 
-validate_bool "$pause_immich_jobs"
-validate_bool "$include_unmatched"
 validate_bool "$cleanup_after_success"
 
 batch_name="${batch_name:-$(slugify "$source_remote")}"
@@ -356,6 +314,9 @@ log_line "Batch root: $batch_root"
 log_line "Mode: $mode"
 log_line "Source remote: $source_remote"
 log_line "Dry run: $dry_run"
+if [[ -n "$immich_go_config" ]]; then
+    log_line "immich-go config: $immich_go_config"
+fi
 
 case "$mode" in
     all)
@@ -384,4 +345,3 @@ case "$mode" in
 esac
 
 log_line "Completed mode: $mode"
-
