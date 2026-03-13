@@ -1,15 +1,15 @@
 # takeout-to-immich
 
-Docker-first Google Photos Takeout imports for Immich, using `rclone` for
-staging and verification and `immich-go` for the actual Takeout-aware import.
+Docker-first Google Photos Takeout imports for Immich, using [`rclone`][rclone-repo] for
+staging and verification and [`immich-go`][immich-go-repo] for the actual Takeout-aware import.
 
 ## What It Does
 
-- Downloads one complete Google Photos Takeout export from Google Drive with `rclone copy`
-- Verifies the staged copy with `rclone check`
-- Imports the full export into Immich with `immich-go upload from-google-photos`
+- Downloads one complete Google Photos Takeout export from Google Drive with [`rclone`][rclone-repo] `copy`
+- Verifies the staged copy with [`rclone`][rclone-repo] `check`
+- Imports the full export into Immich with [`immich-go`][immich-go-repo] `upload from-google-photos`
 - Keeps `payload`, `logs`, and `state` separated so the workflow is resumable and auditable
-- Runs inside an ephemeral container so the host does not need `rclone` or `immich-go` installed
+- Runs inside an ephemeral container so the host does not need [`rclone`][rclone-repo] or [`immich-go`][immich-go-repo] installed
 
 ## Why This Exists
 
@@ -79,8 +79,8 @@ for example `http://immich:8080`.
 
 ## Modes
 
-- `download`: stage the export locally with `rclone copy`
-- `verify`: compare source and staged payload with `rclone check`
+- `download`: stage the export locally with [`rclone`][rclone-repo] `copy`
+- `verify`: compare source and staged payload with [`rclone`][rclone-repo] `check`
 - `upload`: import the staged payload into Immich
 - `cleanup`: remove the local payload after a successful upload
 - `all`: run `download`, `verify`, and `upload` in sequence
@@ -95,7 +95,7 @@ for example `http://immich:8080`.
 ## TrueNAS Helper
 
 If your Google Drive remote already exists as a TrueNAS Cloud Sync credential,
-you can materialize an `rclone` config file with:
+you can materialize an [`rclone`][rclone-repo] config file with:
 
 ```bash
 bash scripts/export-truenas-cloudsync-rclone-config.sh \
@@ -124,3 +124,11 @@ flags for your own environment-specific values.
 ## License
 
 MIT
+
+## Credits
+
+- [`immich-go`][immich-go-repo] by simulot
+- [`rclone`][rclone-repo] by the rclone project
+
+[immich-go-repo]: https://github.com/simulot/immich-go
+[rclone-repo]: https://github.com/rclone/rclone
